@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: security
+logging:
+  level:
+    root: info
