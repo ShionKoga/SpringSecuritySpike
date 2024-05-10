@@ -1,0 +1,13 @@
+version: '3.6'
+name: security-spike
+services:
+  rds:
+    image: postgres
+    container_name: security-spike
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "user"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "security-spike"
+    command: postgres -c log_destination=stderr -c log_statement=all -c log_connections=on -c log_disconnections=on

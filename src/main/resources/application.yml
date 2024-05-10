@@ -1,6 +1,14 @@
 spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/security-spike
+    username: user
+    password: password
+    driver-class-name: org.postgresql.Driver
   application:
     name: security
+  jpa:
+    hibernate:
+      ddl-auto: update
 logging:
   level:
     root: info
