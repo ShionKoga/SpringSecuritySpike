@@ -1,5 +1,4 @@
 package com.example.security
-
 import jakarta.persistence.*
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -8,7 +7,6 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
@@ -29,31 +27,18 @@ class SecurityConfig {
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .authorizeHttpRequests {
+                it.requestMatchers("/user/signup").permitAll()
+                it.requestMatchers("/user/hoge").hasRole("ADMIN")
                 it.anyRequest().authenticated()
             }
+            .csrf { it.disable() }
             .formLogin {}
         return http.build()
     }
 
     @Bean
     fun userDetailsService(dataSource: DataSource): UserDetailsService {
-        val user1 = User.builder()
-            .username("user1")
-            .password("{bcrypt}$2a$10\$ofhSMQ38QHWK3aCOZvAK.eneoaAnSHAFc0M48ud7Xyig3H8KUwUOm")
-            .roles("USER")
-            .build()
-        val user2 = User.builder()
-            .username("user2")
-            .password("{noop}password")
-            .roles("USER")
-            .build()
-        println("user.password========================")
-        println(user1.password)
-        println(user2.password)
-        val users = JdbcUserDetailsManager(dataSource)
-        users.createUser(user1)
-        users.createUser(user2)
-        return users
+        return JdbcUserDetailsManager(dataSource)
     }
 
     @Value("\${spring.datasource.url}")
@@ -135,14 +120,3 @@ data class AuthorityId(
     var username: String? = null,
     var authorityString: String? = null
 ) : java.io.Serializable
-
-//class HogeFilter: OncePerRequestFilter() {
-//    override fun doFilterInternal(
-//        request: HttpServletRequest,
-//        response: HttpServletResponse,
-//        filterChain: FilterChain
-//    ) {
-//        println("${request.requestURL}===========================HOGE FILTER=====================================")
-//        filterChain.doFilter(request, response)
-//    }
-//}
