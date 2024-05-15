@@ -1,26 +1,22 @@
-import {useState} from 'react'
+import {DefaultAuthRepository} from './repository/AuthRepository.ts'
+import UserProvider from './components/UserProvider.tsx'
+import Authorized from './components/Authorized.tsx'
+import Unauthorized from './components/Unauthorized.tsx'
+import LoginScreen from './screen/LoginScreen.tsx'
+import MainScreen from './screen/MainScreen.tsx'
 
-function App() {
-    const [count, setCount] = useState(0)
+const authRepository = new DefaultAuthRepository()
 
+export default function App() {
     return (
-        <>
-            <div>
-            </div>
-            <h1>Vite + React</h1>
-            <div className="card">
-                <button onClick={() => setCount((count) => count + 1)}>
-                    count is {count}
-                </button>
-                <p>
-                    Edit <code>src/App.tsx</code> and save to test HMR
-                </p>
-            </div>
-            <p className="read-the-docs">
-                Click on the Vite and React logos to learn more
-            </p>
-        </>
+        <UserProvider authRepository={authRepository}>
+            <Authorized>
+                <MainScreen authRepository={authRepository}/>
+            </Authorized>
+            <Unauthorized>
+                <LoginScreen authRepository={authRepository}/>
+            </Unauthorized>
+        </UserProvider>
     )
 }
 
-export default App
