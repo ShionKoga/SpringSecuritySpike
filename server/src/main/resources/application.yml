@@ -1,4 +1,11 @@
 spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: client-id
+            client-secret: crient-secret
   datasource:
     url: jdbc:postgresql://localhost:5432/security-spike
     username: user
@@ -11,4 +18,4 @@ spring:
       ddl-auto: update
 logging:
   level:
-    root: info
+    root: trace
