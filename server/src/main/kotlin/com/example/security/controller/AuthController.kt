@@ -1,4 +1,4 @@
-package com.example.security
+package com.example.security.controller
 
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
@@ -11,20 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.provisioning.JdbcUserDetailsManager
-import org.springframework.stereotype.Controller
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
-
-@Controller
-class HomeController {
-    @RequestMapping("/")
-    fun index(): String {
-        return "index.html"
-    }
-}
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/auth")
@@ -65,7 +52,7 @@ class AuthController(
     }
 
     private fun HttpServletRequest.saveSecurityContextIntoSession(context: SecurityContext) {
-        this.getSession(true).setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext())
+        this.getSession(true).setAttribute("SPRING_SECURITY_CONTEXT", context)
     }
 
     private fun HttpServletResponse.addSessionCookie(sessionId: String) {
