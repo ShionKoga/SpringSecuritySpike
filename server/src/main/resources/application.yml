@@ -9,6 +9,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+  security:
+    key: thisissecretkeyveryimportantvalue
 logging:
   level:
     root: info

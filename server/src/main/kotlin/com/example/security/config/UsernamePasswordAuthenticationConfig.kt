@@ -4,9 +4,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.jdbc.datasource.DriverManagerDataSource
-import org.springframework.security.authentication.AuthenticationManager
-import org.springframework.security.authentication.ProviderManager
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -19,17 +16,6 @@ import javax.sql.DataSource
 
 @Configuration
 class UsernamePasswordAuthenticationConfig {
-    @Bean
-    fun authenticationManager(
-        userDetailsService: UserDetailsService,
-        passwordEncoder: PasswordEncoder,
-    ): AuthenticationManager {
-        val authenticationProvider = DaoAuthenticationProvider()
-        authenticationProvider.setUserDetailsService(userDetailsService)
-        authenticationProvider.setPasswordEncoder(passwordEncoder)
-        return ProviderManager(authenticationProvider)
-    }
-
     @Bean
     fun userDetailsService(dataSource: DataSource): UserDetailsService {
         return JdbcUserDetailsManager(dataSource)
