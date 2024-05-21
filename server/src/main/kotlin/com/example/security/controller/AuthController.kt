@@ -1,18 +1,21 @@
 package com.example.security.controller
 
+import com.example.security.repository.OAuthTokenRepository
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
-import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.jwt.*
+import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthenticationToken
 import org.springframework.security.provisioning.JdbcUserDetailsManager
 import org.springframework.web.bind.annotation.*
 import java.time.Instant
@@ -25,11 +28,13 @@ class AuthController(
     private val authenticationManager: AuthenticationManager,
     private val jwtEncoder: JwtEncoder,
     private val passwordEncoder: PasswordEncoder,
+    private val tokenRepository: OAuthTokenRepository,
+    @Value("\${spring.security.google.redirect-uri}") private val redirectUri: String,
+    @Value("\${spring.security.google.login-success-uri}") private val loginSuccessUri: String,
 ) {
     @PostMapping("/signup")
     fun signup(
         @RequestBody request: LoginSignupRequest,
-        httpRequest: HttpServletRequest,
         httpResponse: HttpServletResponse,
     ) {
         val jdbcUserDetailsManager = userDetailsService as? JdbcUserDetailsManager ?: return
@@ -40,9 +45,6 @@ class AuthController(
             .roles("USER")
             .build()
         jdbcUserDetailsManager.createUser(user)
-        val authentication = UsernamePasswordAuthenticationToken.authenticated(user, "", user.authorities)
-        SecurityContextHolder.getContext().authentication = authentication
-        httpRequest.saveSecurityContextIntoSession(SecurityContextHolder.getContext())
         val token = createToken(user)
         httpResponse.addTokenCookie(token)
     }
@@ -50,13 +52,10 @@ class AuthController(
     @PostMapping("/login")
     fun login(
         @RequestBody request: LoginSignupRequest,
-        httpRequest: HttpServletRequest,
         httpResponse: HttpServletResponse,
     ) {
         val authenticationRequest = UsernamePasswordAuthenticationToken.unauthenticated(request.username, request.password)
         val authentication = authenticationManager.authenticate(authenticationRequest)
-        SecurityContextHolder.getContext().authentication = authentication
-        httpRequest.saveSecurityContextIntoSession(SecurityContextHolder.getContext())
         val user = authentication.principal as UserDetails
         val token = createToken(user)
         httpResponse.addTokenCookie(token)
@@ -72,10 +71,6 @@ class AuthController(
         return jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).tokenValue
     }
 
-    private fun HttpServletRequest.saveSecurityContextIntoSession(context: SecurityContext) {
-        this.getSession(true).setAttribute("SPRING_SECURITY_CONTEXT", context)
-    }
-
     private fun HttpServletResponse.addTokenCookie(token: String) {
         val cookie = Cookie("SECURITY_SAMPLE_ACCESS_TOKEN", token)
         cookie.maxAge = 3600
@@ -87,15 +82,11 @@ class AuthController(
     @GetMapping("/user")
     fun getMe(authentication: Authentication): UserDetails {
         val jwt = authentication.principal as Jwt
-        val userDetails = userDetailsService.loadUserByUsername(jwt.subject)
-        return userDetails
+        return userDetailsService.loadUserByUsername(jwt.subject)
     }
 
     @GetMapping("/logout")
     fun logout(httpRequest: HttpServletRequest, httpResponse: HttpServletResponse) {
-        val session = httpRequest.getSession(false)
-        session?.invalidate()
-
         SecurityContextHolder.clearContext()
 
         val cookie = Cookie("SECURITY_SAMPLE_ACCESS_TOKEN", "")
@@ -104,6 +95,32 @@ class AuthController(
         cookie.path = "/api"
         cookie.isHttpOnly = true
         httpResponse.addCookie(cookie)
+    }
+
+    @GetMapping("/login/google")
+    fun loginWithGoogle(httpRequest: HttpServletRequest, httpResponse: HttpServletResponse) {
+        return httpResponse.sendRedirect(
+            "https://accounts.google.com/o/oauth2/v2/auth" +
+                    "?client_id=695126314073-58kj03td09di1plk0v8ru4f38jinvkg5.apps.googleusercontent.com" +
+                    "&redirect_uri=${redirectUri}" +
+                    "&response_type=code" +
+                    "&scope=openid%20email%20&profile"
+        )
+    }
+
+    @GetMapping("/code/google")
+    fun exchangeCodeAndAccessToken(@RequestParam code: String, httpResponse: HttpServletResponse) {
+        val token = tokenRepository.getTokenByCode(code).idToken
+        val bearerTokenAuthenticationToken = BearerTokenAuthenticationToken(token)
+        val bearerTokenAuthentication = authenticationManager.authenticate(bearerTokenAuthenticationToken)
+        val jwt = bearerTokenAuthentication.principal as Jwt
+        try {
+            val userDetails = userDetailsService.loadUserByUsername(jwt.claims["email"] as String)
+            this.login(LoginSignupRequest(userDetails.username, ""), httpResponse)
+        } catch (e: UsernameNotFoundException) {
+            this.signup(LoginSignupRequest(jwt.claims["email"] as String, ""), httpResponse)
+        }
+        return httpResponse.sendRedirect(loginSuccessUri)
     }
 }
 

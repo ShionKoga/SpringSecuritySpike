@@ -6,10 +6,7 @@ import jakarta.servlet.http.HttpServletRequest
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.security.oauth2.jwt.JwtDecoder
-import org.springframework.security.oauth2.jwt.JwtEncoder
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
+import org.springframework.security.oauth2.jwt.*
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver
 import javax.crypto.spec.SecretKeySpec
 
@@ -20,9 +17,16 @@ class JwtAuthenticationConfig(
 ) {
     private val secretKey = SecretKeySpec(jwtKey.toByteArray(), "HmacSHA256")
 
-    @Bean
-    fun jwtDecoder(): JwtDecoder {
+    @Bean(name = ["defaultJwtDecoder"])
+    fun defaultJwtDecoder(): JwtDecoder {
         return NimbusJwtDecoder.withSecretKey(secretKey).build()
+    }
+
+    @Bean(name = ["googleJwtDecoder"])
+    fun googleJwtDecoder(): JwtDecoder {
+        return NimbusJwtDecoder
+            .withJwkSetUri("https://www.googleapis.com/oauth2/v3/certs")
+            .build()
     }
 
     @Bean
@@ -32,7 +36,7 @@ class JwtAuthenticationConfig(
     }
 
     @Bean
-    fun bearerTokenResolver(jwtDecoder: JwtDecoder): BearerTokenResolver {
+    fun bearerTokenResolver(): BearerTokenResolver {
         return CustomBearerTokenResolver()
     }
 }
@@ -43,6 +47,8 @@ class CustomBearerTokenResolver: BearerTokenResolver {
         val permittedUrls = listOf(
             "/api/auth/signup",
             "/api/auth/login",
+            "/api/auth/login/google",
+            "/api/auth/code/google",
         )
         if (permittedUrls.contains(request.requestURI)) return null
         val cookie = request.cookies?.find { it.name == "SECURITY_SAMPLE_ACCESS_TOKEN" }

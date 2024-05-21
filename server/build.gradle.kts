@@ -6,6 +6,7 @@ plugins {
 	kotlin("jvm") version "1.9.23"
 	kotlin("plugin.spring") version "1.9.23"
 	kotlin("plugin.noarg") version "1.9.23"
+	kotlin("plugin.serialization") version "1.9.23"
 }
 
 group = "com.example"
@@ -34,6 +35,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.postgresql:postgresql")
 	runtimeOnly("com.h2database:h2")
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.security:spring-security-test")

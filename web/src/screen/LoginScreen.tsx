@@ -45,6 +45,7 @@ export default function LoginScreen(
                     <button onClick={() => setUserAlreadyHasAnAccount(true)}>こちら</button>
                 </div>
             }
+            <div>または<a href="http://localhost:8080/api/auth/login/google">Googleでサインイン</a></div>
         </>
     )
 }

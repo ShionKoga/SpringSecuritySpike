@@ -1,4 +1,5 @@
 package com.example.security.config
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationManager
@@ -15,7 +16,10 @@ import org.springframework.security.web.SecurityFilterChain
 
 @Configuration
 @EnableWebSecurity
-class SecurityConfig {
+class SecurityConfig(
+    @Qualifier("defaultJwtDecoder") private val defaultJwtDecoder: JwtDecoder,
+    @Qualifier("googleJwtDecoder") private val googleJwtDecoder: JwtDecoder,
+) {
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
@@ -23,11 +27,15 @@ class SecurityConfig {
                 it.requestMatchers(
                     "/api/auth/signup",
                     "/api/auth/login",
+                    "/api/auth/login/google",
+                    "/api/auth/code/google",
                 ).permitAll()
                 it.anyRequest().authenticated()
             }
             .csrf { it.disable() }
-            .oauth2ResourceServer { it.jwt {} }
+            .oauth2ResourceServer {
+                it.jwt{ jwt -> jwt.decoder(defaultJwtDecoder) }
+            }
         return http.build()
     }
 
@@ -35,14 +43,18 @@ class SecurityConfig {
     fun authenticationManager(
         userDetailsService: UserDetailsService,
         passwordEncoder: PasswordEncoder,
-        jwtDecoder: JwtDecoder,
     ): AuthenticationManager {
         val daoAuthenticationProvider = DaoAuthenticationProvider()
         daoAuthenticationProvider.setUserDetailsService(userDetailsService)
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder)
 
-        val jwtAuthenticationProvider = JwtAuthenticationProvider(jwtDecoder)
+        val defaultJwtAuthenticationProvider = JwtAuthenticationProvider(defaultJwtDecoder)
+        val googleJwtAuthenticationProvider = JwtAuthenticationProvider(googleJwtDecoder)
 
-        return ProviderManager(daoAuthenticationProvider, jwtAuthenticationProvider)
+        return ProviderManager(
+            daoAuthenticationProvider,
+            defaultJwtAuthenticationProvider,
+            googleJwtAuthenticationProvider,
+        )
     }
 }

@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/security-spike
-    username: user
-    password: password
+    url: jdbc:postgresql://${DATABASE_HOST}/${DATABASE_NAME}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   application:
     name: security
@@ -10,7 +10,12 @@ spring:
     hibernate:
       ddl-auto: update
   security:
-    key: thisissecretkeyveryimportantvalue
+    key: ${JWT_SECURITY_KEY}
+    google:
+      client-id: ${GOOGLE_CLIENT_SECRET}
+      client-secret: ${GOOGLE_CLIENT_ID}
+      redirect-uri: ${GOOGLE_REDIRECT_URI}
+      login-success-uri: ${GOOGLE_LOGIN_SUCCESS_URI}
 logging:
   level:
     root: info
