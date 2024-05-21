@@ -19,6 +19,7 @@ import org.springframework.security.web.SecurityFilterChain
 class SecurityConfig(
     @Qualifier("defaultJwtDecoder") private val defaultJwtDecoder: JwtDecoder,
     @Qualifier("googleJwtDecoder") private val googleJwtDecoder: JwtDecoder,
+    @Qualifier("appleJwtDecoder") private val appleJwtDecoder: JwtDecoder,
 ) {
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
@@ -28,7 +29,11 @@ class SecurityConfig(
                     "/api/auth/signup",
                     "/api/auth/login",
                     "/api/auth/login/google",
+                    "/api/auth/login/apple",
                     "/api/auth/code/google",
+                    "/api/auth/code/apple",
+                    "/*",
+                    "/assets/**",
                 ).permitAll()
                 it.anyRequest().authenticated()
             }
@@ -50,11 +55,13 @@ class SecurityConfig(
 
         val defaultJwtAuthenticationProvider = JwtAuthenticationProvider(defaultJwtDecoder)
         val googleJwtAuthenticationProvider = JwtAuthenticationProvider(googleJwtDecoder)
+        val appleJwtAuthenticationProvider = JwtAuthenticationProvider(appleJwtDecoder)
 
         return ProviderManager(
             daoAuthenticationProvider,
             defaultJwtAuthenticationProvider,
             googleJwtAuthenticationProvider,
+            appleJwtAuthenticationProvider,
         )
     }
 }

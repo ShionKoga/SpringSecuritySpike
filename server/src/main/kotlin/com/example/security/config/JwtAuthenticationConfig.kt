@@ -29,6 +29,13 @@ class JwtAuthenticationConfig(
             .build()
     }
 
+    @Bean(name = ["appleJwtDecoder"])
+    fun appleJwtDecoder(): JwtDecoder {
+        return NimbusJwtDecoder
+            .withJwkSetUri("https://appleid.apple.com/auth/keys")
+            .build()
+    }
+
     @Bean
     fun jwtEncoder(): JwtEncoder {
         val secret = ImmutableSecret<SecurityContext>(secretKey)
@@ -48,7 +55,9 @@ class CustomBearerTokenResolver: BearerTokenResolver {
             "/api/auth/signup",
             "/api/auth/login",
             "/api/auth/login/google",
+            "/api/auth/login/apple",
             "/api/auth/code/google",
+            "/api/auth/code/apple",
         )
         if (permittedUrls.contains(request.requestURI)) return null
         val cookie = request.cookies?.find { it.name == "SECURITY_SAMPLE_ACCESS_TOKEN" }

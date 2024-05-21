@@ -40,3 +40,6 @@ out/
 .kotlin
 .DS_Store
 .env
+AppleAuthKey.p8
+*.html
+*.js

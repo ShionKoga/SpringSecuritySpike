@@ -4,6 +4,7 @@ import com.example.security.repository.OAuthTokenRepository
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -28,9 +29,15 @@ class AuthController(
     private val authenticationManager: AuthenticationManager,
     private val jwtEncoder: JwtEncoder,
     private val passwordEncoder: PasswordEncoder,
-    private val tokenRepository: OAuthTokenRepository,
-    @Value("\${spring.security.google.redirect-uri}") private val redirectUri: String,
-    @Value("\${spring.security.google.login-success-uri}") private val loginSuccessUri: String,
+    @Qualifier("googleOAuthTokenRepository")
+    private val googleTokenRepository: OAuthTokenRepository,
+    @Qualifier("appleOAuthTokenRepository")
+    private val appleTokenRepository: OAuthTokenRepository,
+    @Value("\${spring.security.google.redirect-uri}") private val googleRedirectUri: String,
+    @Value("\${spring.security.login-success-uri}") private val loginSuccessUri: String,
+    @Value("\${spring.security.google.client-id}") private val googleClientId: String,
+    @Value("\${spring.security.apple.redirect-uri}") private val appleRedirectUri: String,
+    @Value("\${spring.security.apple.client-id}") private val appleClientId: String,
 ) {
     @PostMapping("/signup")
     fun signup(
@@ -98,19 +105,19 @@ class AuthController(
     }
 
     @GetMapping("/login/google")
-    fun loginWithGoogle(httpRequest: HttpServletRequest, httpResponse: HttpServletResponse) {
+    fun loginWithGoogle(httpResponse: HttpServletResponse) {
         return httpResponse.sendRedirect(
             "https://accounts.google.com/o/oauth2/v2/auth" +
-                    "?client_id=695126314073-58kj03td09di1plk0v8ru4f38jinvkg5.apps.googleusercontent.com" +
-                    "&redirect_uri=${redirectUri}" +
+                    "?client_id=${googleClientId}" +
+                    "&redirect_uri=${googleRedirectUri}" +
                     "&response_type=code" +
                     "&scope=openid%20email%20&profile"
         )
     }
 
     @GetMapping("/code/google")
-    fun exchangeCodeAndAccessToken(@RequestParam code: String, httpResponse: HttpServletResponse) {
-        val token = tokenRepository.getTokenByCode(code).idToken
+    fun exchangeCodeAndGoogleGoogleAccessToken(@RequestParam code: String, httpResponse: HttpServletResponse) {
+        val token = googleTokenRepository.getTokenByCode(code).idToken
         val bearerTokenAuthenticationToken = BearerTokenAuthenticationToken(token)
         val bearerTokenAuthentication = authenticationManager.authenticate(bearerTokenAuthenticationToken)
         val jwt = bearerTokenAuthentication.principal as Jwt
@@ -119,6 +126,32 @@ class AuthController(
             this.login(LoginSignupRequest(userDetails.username, ""), httpResponse)
         } catch (e: UsernameNotFoundException) {
             this.signup(LoginSignupRequest(jwt.claims["email"] as String, ""), httpResponse)
+        }
+        return httpResponse.sendRedirect(loginSuccessUri)
+    }
+
+    @GetMapping("/login/apple")
+    fun loginWithApple(httpResponse: HttpServletResponse) {
+        return httpResponse.sendRedirect(
+            "https://appleid.apple.com/auth/authorize" +
+                    "?client_id=$appleClientId" +
+                    "&redirect_uri=$appleRedirectUri" +
+                    "&response_type=code" +
+                    "&response_mode=query"
+        )
+    }
+
+    @GetMapping("/code/apple")
+    fun exchangeCodeAndAppleAccessToken(@RequestParam code: String, httpResponse: HttpServletResponse) {
+        val token = appleTokenRepository.getTokenByCode(code).idToken
+        val bearerTokenAuthenticationToken = BearerTokenAuthenticationToken(token)
+        val bearerTokenAuthentication = authenticationManager.authenticate(bearerTokenAuthenticationToken)
+        val jwt = bearerTokenAuthentication.principal as Jwt
+        try {
+            val userDetails = userDetailsService.loadUserByUsername(jwt.claims["sub"] as String)
+            this.login(LoginSignupRequest(userDetails.username, ""), httpResponse)
+        } catch (e: UsernameNotFoundException) {
+            this.signup(LoginSignupRequest(jwt.claims["sub"] as String, ""), httpResponse)
         }
         return httpResponse.sendRedirect(loginSuccessUri)
     }

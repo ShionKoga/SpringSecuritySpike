@@ -34,6 +34,7 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.postgresql:postgresql")
+	implementation("com.auth0:java-jwt:4.2.1")
 	runtimeOnly("com.h2database:h2")
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
 
