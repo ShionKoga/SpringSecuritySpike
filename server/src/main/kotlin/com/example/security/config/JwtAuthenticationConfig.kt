@@ -58,6 +58,7 @@ class CustomBearerTokenResolver: BearerTokenResolver {
             "/api/auth/login/apple",
             "/api/auth/code/google",
             "/api/auth/code/apple",
+            "/example/hoge",
         )
         if (permittedUrls.contains(request.requestURI)) return null
         val cookie = request.cookies?.find { it.name == "SECURITY_SAMPLE_ACCESS_TOKEN" }

@@ -32,6 +32,7 @@ class SecurityConfig(
                     "/api/auth/login/apple",
                     "/api/auth/code/google",
                     "/api/auth/code/apple",
+                    "/example/hoge",
                     "/*",
                     "/assets/**",
                 ).permitAll()
